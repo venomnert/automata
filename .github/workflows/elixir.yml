@@ -32,4 +32,4 @@ jobs:
     - name: Generate docs
       run: mix docs
     - name: Run dialyzer
-      run: mix do dialyzer.clean, dialyzer --format dialyxir
+      run: mix dialyzer --format dialyzer

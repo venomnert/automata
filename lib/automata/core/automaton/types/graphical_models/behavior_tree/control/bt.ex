@@ -1,6 +1,8 @@
 defmodule Automaton.Types.BT do
   @moduledoc """
   Implements the Behavior Tree (BT) state space representation.
+  Each tree is goal-oriented, i.e. associated with a distinct, high-level goal
+  which it attempts to achieve.
 
   Behavior trees are a unique combination of state space representation
   (graphical, or tree) and action-selection decision scheme with plugin
@@ -38,9 +40,6 @@ defmodule Automaton.Types.BT do
 
         Enum.member?(cn_types, node_type) ->
           quote do: use(ComponentServer, automaton_config: unquote(automaton_config))
-
-        # What should the default value be if first two conditions fail?
-
       end
 
     control =
@@ -93,6 +92,49 @@ defmodule Automaton.Types.BT do
         def handle_call(:get_state, _from, state) do
           {:reply, state, state}
         end
+
+        ## Behavior @behaviour, here because its not working in the module itself
+
+        def handle_call(:status, _from, state) do
+          {:reply, state.status, state}
+        end
+
+        def handle_call(:set_running, _from, state) do
+          {:reply, :ok, %{state | status: :bh_running}}
+        end
+
+        def handle_call(:succeed, _from, state) do
+          {:reply, :ok, %{state | status: :bh_success}}
+        end
+
+        def handle_call(:fail, _from, state) do
+          {:reply, :ok, %{state | status: :bh_failure}}
+        end
+
+        def handle_call(:running?, _from, state) do
+          {:reply, state.status == :bh_running, state}
+        end
+
+        def handle_call(:aborted?, _from, state) do
+          {:reply, state.status == :bh_aborted, state}
+        end
+
+        def handle_call(:terminated?, _from, state) do
+          status = state.status
+          {:reply, status == :bh_success || status == :bh_failure, state}
+        end
+
+        def handle_call(:abort, _from, state) do
+          on_terminate(state)
+          {:reply, true, %{state | status: :bh_aborted}}
+        end
+
+        def handle_call(:reset, _from, state) do
+          {:reply, true, %{state | status: :bh_invalid}}
+        end
+
+        # Defoverridable makes the given functions in the current module overridable
+        defoverridable update: 1, on_init: 1, on_terminate: 1
       end
 
     [prepend, node_type, control]

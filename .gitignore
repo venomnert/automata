@@ -29,4 +29,4 @@ priv/plts/*.plt.hash
 
 .DS_Store
 
-.mixlock
+mix.lock
